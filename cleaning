@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cleaning Company Agenda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+<div class="max-w-6xl mx-auto">
+  <div class="flex justify-between items-center mb-6">
+    <h1 id="title" class="text-3xl font-bold">📅 Cleaning Company Agenda</h1>
+    <select onchange="setLanguage(this.value)" class="p-2 border rounded">
+      <option value="en">English</option>
+      <option value="gr">Greek</option>
+      <option value="al">Albanian</option>
+    </select>
+  </div>
+
+  <div class="bg-white p-4 rounded-2xl shadow mb-6">
+    <h2 id="addJob" class="text-xl mb-4">Add Job</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <input id="worker" placeholder="Worker Name" class="p-2 border rounded" />
+      <input id="client" placeholder="Client Name" class="p-2 border rounded" />
+      <input id="location" placeholder="Location" class="p-2 border rounded" />
+      <input id="hours" type="number" placeholder="Hours" class="p-2 border rounded" />
+      <input id="date" type="date" class="p-2 border rounded" />
+      <input id="time" type="time" class="p-2 border rounded" />
+    </div>
+    <button onclick="addEntry()" id="addBtn" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-xl">Add Job</button>
+  </div>
+
+  <div class="bg-white p-4 rounded-2xl shadow">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="border-b">
+          <th id="thWorker">Worker</th>
+          <th id="thClient">Client</th>
+          <th id="thLocation">Location</th>
+          <th id="thHours">Hours</th>
+          <th id="thDate">Date</th>
+          <th id="thTime">Time</th>
+          <th id="thStatus">Status</th>
+          <th id="thActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SHARE BUTTONS -->
+  <div class="mt-6 flex gap-4">
+    <button onclick="exportCSV()" class="bg-green-500 text-white px-4 py-2 rounded-xl">Export Excel</button>
+    <button onclick="window.print()" class="bg-purple-500 text-white px-4 py-2 rounded-xl">Save as PDF</button>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('cleaningData')) || [];
+
+const translations = {
+  en: {
+    title: "📅 Cleaning Company Agenda",
+    addJob: "Add Job",
+    addBtn: "Add Job",
+    worker: "Worker",
+    client: "Client",
+    location: "Location",
+    hours: "Hours",
+    date: "Date",
+    time: "Time",
+    status: "Status",
+    actions: "Actions",
+    placeholders: ["Worker Name","Client Name","Location","Hours"]
+  },
+  gr: {
+    title: "📅 Πρόγραμμα Καθαρισμού",
+    addJob: "Προσθήκη Εργασίας",
+    addBtn: "Προσθήκη",
+    worker: "Εργαζόμενος",
+    client: "Πελάτης",
+    location: "Τοποθεσία",
+    hours: "Ώρες",
+    date: "Ημερομηνία",
+    time: "Ώρα",
+    status: "Κατάσταση",
+    actions: "Ενέργειες",
+    placeholders: ["Όνομα Εργαζομένου","Πελάτης","Τοποθεσία","Ώρες"]
+  },
+  al: {
+    title: "📅 Agjenda e Pastrimit",
+    addJob: "Shto Punë",
+    addBtn: "Shto",
+    worker: "Punëtor",
+    client: "Klient",
+    location: "Vendndodhja",
+    hours: "Orë",
+    date: "Datë",
+    time: "Koha",
+    status: "Statusi",
+    actions: "Veprime",
+    placeholders: ["Emri i punëtorit","Klient","Vendndodhja","Orë"]
+  }
+};
+
+function setLanguage(lang) {
+  const t = translations[lang];
+  document.getElementById('title').innerText = t.title;
+  document.getElementById('addJob').innerText = t.addJob;
+  document.getElementById('addBtn').innerText = t.addBtn;
+  document.getElementById('thWorker').innerText = t.worker;
+  document.getElementById('thClient').innerText = t.client;
+  document.getElementById('thLocation').innerText = t.location;
+  document.getElementById('thHours').innerText = t.hours;
+  document.getElementById('thDate').innerText = t.date;
+  document.getElementById('thTime').innerText = t.time;
+  document.getElementById('thStatus').innerText = t.status;
+  document.getElementById('thActions').innerText = t.actions;
+
+  // placeholders
+  document.getElementById('worker').placeholder = t.placeholders[0];
+  document.getElementById('client').placeholder = t.placeholders[1];
+  document.getElementById('location').placeholder = t.placeholders[2];
+  document.getElementById('hours').placeholder = t.placeholders[3];
+}
+
+function addEntry() {
+  const entry = {
+    worker: worker.value,
+    client: client.value,
+    location: location.value,
+    hours: hours.value,
+    date: date.value,
+    time: time.value,
+    status: 'Planned'
+  };
+
+  data.push(entry);
+  localStorage.setItem('cleaningData', JSON.stringify(data));
+  renderTable();
+}
+
+function renderTable() {
+  const table = document.getElementById('tableBody');
+  table.innerHTML = '';
+
+  data.forEach((e, i) => {
+    table.innerHTML += `
+      <tr class="border-b">
+        <td>${e.worker}</td>
+        <td>${e.client}</td>
+        <td>${e.location}</td>
+        <td>${e.hours}</td>
+        <td>${e.date}</td>
+        <td>${e.time}</td>
+        <td>
+          <select onchange="changeStatus(${i}, this.value)">
+            <option ${e.status==='Planned'?'selected':''}>Planned</option>
+            <option ${e.status==='Done'?'selected':''}>Done</option>
+            <option ${e.status==='Delayed'?'selected':''}>Delayed</option>
+            <option ${e.status==='Cancelled'?'selected':''}>Cancelled</option>
+          </select>
+        </td>
+        <td>
+          <button onclick="deleteEntry(${i})" class="bg-red-500 text-white px-2 py-1 rounded">X</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function deleteEntry(i) {
+  if(confirm('Delete this job?')){
+    data.splice(i, 1);
+    localStorage.setItem('cleaningData', JSON.stringify(data));
+    renderTable();
+  }
+}
+
+function changeStatus(i, status) {
+  data[i].status = status;
+  localStorage.setItem('cleaningData', JSON.stringify(data));
+}
+
+function exportCSV() {
+  let csv = 'Worker,Client,Location,Hours,Date,Time,Status\n';
+  data.forEach(e => {
+    csv += `${e.worker},${e.client},${e.location},${e.hours},${e.date},${e.time},${e.status}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'agenda.csv';
+  a.click();
+}
+
+renderTable();
+</script>
+
+</body>
+</html>
